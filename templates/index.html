@@ -1,229 +1,250 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Face Similarity Test</title>
-    <style>
-      body {
-        font-family: sans-serif;
-        margin: 20px;
-        background-color: #f4f4f4;
-      }
-      .container {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      }
-      h1 {
-        text-align: center;
-        color: #333;
-      }
-      .image-loader {
-        margin-bottom: 20px;
-        padding: 15px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-      }
-      .image-loader label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-      }
-      .image-loader input[type="file"] {
-        margin-bottom: 10px;
-      }
-      .preview-container {
-        display: flex;
-        justify-content: space-around;
-        margin-bottom: 20px;
-      }
-      .preview-box {
-        width: 45%;
-        text-align: center;
-      }
-      .preview-box img {
-        max-width: 100%;
-        max-height: 200px;
-        border: 1px solid #ccc;
-        margin-top: 5px;
-        display: none;
-      }
-      .button-container {
-        text-align: center;
-        margin-bottom: 20px;
-      }
-      button {
-        background-color: #007bff;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 16px;
-      }
-      button:hover {
-        background-color: #0056b3;
-      }
-      button:disabled {
-        background-color: #cccccc;
-        cursor: not-allowed;
-      }
-      #result {
-        margin-top: 20px;
-        padding: 15px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        background-color: #e9ecef;
-        text-align: center;
-      }
-      .loader {
-        border: 5px solid #f3f3f3; /* Light grey */
-        border-top: 5px solid #3498db; /* Blue */
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        animation: spin 1s linear infinite;
-        margin: 10px auto;
-        display: none; /* Hidden by default */
-      }
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <h1>Uji Similaritas Wajah</h1>
 
-      <div class="preview-container">
-        <div class="preview-box">
-          <div class="image-loader">
-            <label for="file1">Load Image 1:</label>
-            <input type="file" id="file1" name="image1" accept="image/*" />
-            <img id="preview1" src="#" alt="Preview 1" />
-          </div>
-        </div>
-        <div class="preview-box">
-          <div class="image-loader">
-            <label for="file2">Load Image 2:</label>
-            <input type="file" id="file2" name="image2" accept="image/*" />
-            <img id="preview2" src="#" alt="Preview 2" />
-          </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Face Similarity Test</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+      background-color: #f4f4f4;
+    }
+
+    .container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    .image-loader {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .image-loader label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    .image-loader input[type="file"] {
+      margin-bottom: 10px;
+    }
+
+    .preview-container {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+    }
+
+    .preview-box {
+      width: 45%;
+      text-align: center;
+    }
+
+    .preview-box img {
+      max-width: 100%;
+      max-height: 200px;
+      border: 1px solid #ccc;
+      margin-top: 5px;
+      display: none;
+    }
+
+    .button-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #e9ecef;
+      text-align: center;
+    }
+
+    .loader {
+      border: 5px solid #f3f3f3;
+      /* Light grey */
+      border-top: 5px solid #3498db;
+      /* Blue */
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 10px auto;
+      display: none;
+      /* Hidden by default */
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Uji Similaritas Wajah</h1>
+
+    <div class="preview-container">
+      <div class="preview-box">
+        <div class="image-loader">
+          <label for="file1">Load Image 1:</label>
+          <input type="file" id="file1" name="image1" accept="image/*" />
+          <img id="preview1" src="#" alt="Preview 1" />
         </div>
       </div>
-
-      <div class="button-container">
-        <button id="predictBtn" disabled>Predict Similarity</button>
+      <div class="preview-box">
+        <div class="image-loader">
+          <label for="file2">Load Image 2:</label>
+          <input type="file" id="file2" name="image2" accept="image/*" />
+          <img id="preview2" src="#" alt="Preview 2" />
+        </div>
       </div>
-
-      <div id="loader" class="loader"></div>
-      <div id="result">Hasil akan tampil di sini...</div>
     </div>
 
-    <script>
-      const file1Input = document.getElementById("file1");
-      const file2Input = document.getElementById("file2");
-      const preview1 = document.getElementById("preview1");
-      const preview2 = document.getElementById("preview2");
-      const predictBtn = document.getElementById("predictBtn");
-      const resultDiv = document.getElementById("result");
-      const loaderDiv = document.getElementById("loader");
+    <div class="button-container">
+      <button id="predictBtn" disabled>Predict Similarity</button>
+    </div>
 
-      let file1 = null;
-      let file2 = null;
+    <div id="loader" class="loader"></div>
+    <div id="result">Hasil akan tampil di sini...</div>
+  </div>
 
-      function updateButtonState() {
-        predictBtn.disabled = !(file1 && file2);
+  <script>
+    const file1Input = document.getElementById("file1");
+    const file2Input = document.getElementById("file2");
+    const preview1 = document.getElementById("preview1");
+    const preview2 = document.getElementById("preview2");
+    const predictBtn = document.getElementById("predictBtn");
+    const resultDiv = document.getElementById("result");
+    const loaderDiv = document.getElementById("loader");
+
+    let file1 = null;
+    let file2 = null;
+
+    function updateButtonState() {
+      predictBtn.disabled = !(file1 && file2);
+    }
+
+    file1Input.addEventListener("change", function (event) {
+      file1 = event.target.files[0];
+      if (file1) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          preview1.src = e.target.result;
+          preview1.style.display = "block";
+        };
+        reader.readAsDataURL(file1);
+      } else {
+        preview1.src = "#";
+        preview1.style.display = "none";
+      }
+      updateButtonState();
+    });
+
+    file2Input.addEventListener("change", function (event) {
+      file2 = event.target.files[0];
+      if (file2) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          preview2.src = e.target.result;
+          preview2.style.display = "block";
+        };
+        reader.readAsDataURL(file2);
+      } else {
+        preview2.src = "#";
+        preview2.style.display = "none";
+      }
+      updateButtonState();
+    });
+
+    predictBtn.addEventListener("click", async function () {
+      if (!file1 || !file2) {
+        resultDiv.innerHTML =
+          '<p style="color: red;">Silakan pilih kedua gambar terlebih dahulu.</p>';
+        return;
       }
 
-      file1Input.addEventListener("change", function (event) {
-        file1 = event.target.files[0];
-        if (file1) {
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            preview1.src = e.target.result;
-            preview1.style.display = "block";
-          };
-          reader.readAsDataURL(file1);
-        } else {
-          preview1.src = "#";
-          preview1.style.display = "none";
-        }
-        updateButtonState();
-      });
+      const formData = new FormData();
+      formData.append("image1", file1);
+      formData.append("image2", file2);
 
-      file2Input.addEventListener("change", function (event) {
-        file2 = event.target.files[0];
-        if (file2) {
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            preview2.src = e.target.result;
-            preview2.style.display = "block";
-          };
-          reader.readAsDataURL(file2);
-        } else {
-          preview2.src = "#";
-          preview2.style.display = "none";
-        }
-        updateButtonState();
-      });
+      resultDiv.innerHTML = "Memproses...";
+      loaderDiv.style.display = "block";
+      predictBtn.disabled = true;
 
-      predictBtn.addEventListener("click", async function () {
-        if (!file1 || !file2) {
-          resultDiv.innerHTML =
-            '<p style="color: red;">Silakan pilih kedua gambar terlebih dahulu.</p>';
-          return;
-        }
+      try {
+        const response = await fetch("/predict", {
+          method: "POST",
+          body: formData,
+        });
 
-        const formData = new FormData();
-        formData.append("image1", file1);
-        formData.append("image2", file2);
+        const data = await response.json();
+        loaderDiv.style.display = "none";
+        predictBtn.disabled = false; // Re-enable after processing
 
-        resultDiv.innerHTML = "Memproses...";
-        loaderDiv.style.display = "block";
-        predictBtn.disabled = true;
-
-        try {
-          const response = await fetch("/predict", {
-            method: "POST",
-            body: formData,
-          });
-
-          const data = await response.json();
-          loaderDiv.style.display = "none";
-          predictBtn.disabled = false; // Re-enable after processing
-
-          if (response.ok) {
-            let resultHTML = `<p><strong>Model:</strong> ${data.model}</p>`;
-            resultHTML += `<p><strong>Metric:</strong> ${data.similarity_metric}</p>`;
-            resultHTML += `<p><strong>Distance:</strong> ${data.distance.toFixed(
-              4
-            )} (Threshold: ${data.threshold})</p>`;
-            if (data.verified) {
-              resultHTML += `<p style="color: green; font-weight: bold;">KESIMPULAN: Kedua gambar adalah orang yang SAMA.</p>`;
-            } else {
-              resultHTML += `<p style="color: red; font-weight: bold;">KESIMPULAN: Kedua gambar adalah orang yang BERBEDA.</p>`;
-            }
-            resultDiv.innerHTML = resultHTML;
+        if (response.ok) {
+          let resultHTML = `<p><strong>Model:</strong> ${data.model}</p>`;
+          resultHTML += `<p><strong>Metric:</strong> ${data.similarity_metric}</p>`;
+          resultHTML += `<p><strong>Distance:</strong> ${data.distance.toFixed(
+            4
+          )} (Threshold: ${data.threshold})</p>`;
+          if (data.verified) {
+            resultHTML += `<p style="color: green; font-weight: bold;">KESIMPULAN: Kedua gambar adalah orang yang SAMA.</p>`;
           } else {
-            resultDiv.innerHTML = `<p style="color: red;">Error: ${
-              data.error || "Unknown error"
-            }</p>`;
+            resultHTML += `<p style="color: red; font-weight: bold;">KESIMPULAN: Kedua gambar adalah orang yang BERBEDA.</p>`;
           }
-        } catch (error) {
-          loaderDiv.style.display = "none";
-          predictBtn.disabled = false;
-          console.error("Error:", error);
-          resultDiv.innerHTML = `<p style="color: red;">Terjadi kesalahan pada koneksi atau server.</p>`;
+          resultDiv.innerHTML = resultHTML;
+        } else {
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${data.error || "Unknown error"
+            }</p>`;
         }
-      });
-    </script>
-  </body>
+      } catch (error) {
+        loaderDiv.style.display = "none";
+        predictBtn.disabled = false;
+        console.error("Error:", error);
+        resultDiv.innerHTML = `<p style="color: red;">Terjadi kesalahan pada koneksi atau server.</p>`;
+      }
+    });
+  </script>
+</body>
+
 </html>
