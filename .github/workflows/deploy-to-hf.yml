@@ -1,0 +1,26 @@
+name: Deploy to Hugging Face
+
+on:
+  push:
+    branches: [main]  # Ubah jika kamu pakai branch lain
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitHub repo
+        uses: actions/checkout@v3
+
+      - name: Set up Git
+        run: |
+          git config --global user.email "maulanazahiri31@gmail.com"
+          git config --global user.name "yolookings"
+
+      - name: Push to Hugging Face Spaces
+        run: |
+          git clone https://huggingface_hub:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/yolooaster/face-similarity-checker space-repo
+          rsync -av --exclude='.git' ./ space-repo/
+          cd space-repo
+          git add .
+          git commit -m "Sync from GitHub"
+          git push
