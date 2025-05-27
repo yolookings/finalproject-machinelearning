@@ -4,107 +4,247 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Face Similarity Test</title>
+  <title>Face Similarity Test - Enhanced</title>
   <style>
     body {
-      font-family: sans-serif;
-      margin: 20px;
-      background-color: #f4f4f4;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
     }
 
     .container {
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      max-width: 1200px;
+      margin: 0 auto;
     }
 
     h1 {
       text-align: center;
       color: #333;
+      margin-bottom: 30px;
+      font-size: 2.5em;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
-    .image-loader {
-      margin-bottom: 20px;
-      padding: 15px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
+    .model-selector {
+      margin-bottom: 25px;
+      padding: 20px;
+      border: 2px solid #e0e6ed;
+      border-radius: 12px;
+      background: linear-gradient(45deg, #f8f9ff, #ffffff);
     }
 
-    .image-loader label {
+    .model-selector label {
       display: block;
-      margin-bottom: 5px;
+      margin-bottom: 10px;
       font-weight: bold;
+      color: #333;
+      font-size: 1.1em;
     }
 
-    .image-loader input[type="file"] {
-      margin-bottom: 10px;
+    .model-selector select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      background: white;
+      transition: all 0.3s ease;
+    }
+
+    .model-selector select:focus {
+      border-color: #667eea;
+      outline: none;
+      box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+    }
+
+    .image-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    .image-box {
+      border: 2px solid #e0e6ed;
+      border-radius: 15px;
+      padding: 20px;
+      background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+      transition: all 0.3s ease;
+    }
+
+    .image-box:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .image-box h3 {
+      margin-top: 0;
+      color: #333;
+      text-align: center;
+      font-size: 1.3em;
+    }
+
+    .upload-methods {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+
+    .method-btn {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .method-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .method-btn.active {
+      background: linear-gradient(45deg, #4CAF50, #45a049);
+    }
+
+    .upload-area {
+      border: 3px dashed #ddd;
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .upload-area:hover {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.05);
+    }
+
+    .upload-area.dragover {
+      border-color: #4CAF50;
+      background: rgba(76, 175, 80, 0.1);
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .webcam-container {
+      display: none;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .webcam-container.active {
+      display: block;
+    }
+
+    video {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 12px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .capture-btn {
+      background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 15px;
+      transition: all 0.3s ease;
+    }
+
+    .capture-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
     }
 
     .preview-container {
-      display: flex;
-      justify-content: space-around;
-      margin-bottom: 20px;
-    }
-
-    .preview-box {
-      width: 45%;
       text-align: center;
+      margin-top: 20px;
     }
 
-    .preview-box img {
+    .preview-img {
       max-width: 100%;
-      max-height: 200px;
-      border: 1px solid #ccc;
-      margin-top: 5px;
+      max-height: 250px;
+      border-radius: 12px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
       display: none;
     }
 
     .button-container {
       text-align: center;
-      margin-bottom: 20px;
+      margin: 30px 0;
     }
 
-    button {
-      background-color: #007bff;
+    .predict-btn {
+      background: linear-gradient(45deg, #4CAF50, #45a049);
       color: white;
-      padding: 10px 20px;
+      padding: 15px 40px;
       border: none;
-      border-radius: 4px;
+      border-radius: 30px;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 18px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
     }
 
-    button:hover {
-      background-color: #0056b3;
+    .predict-btn:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 30px rgba(76, 175, 80, 0.4);
     }
 
-    button:disabled {
-      background-color: #cccccc;
+    .predict-btn:disabled {
+      background: #cccccc;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
 
     #result {
-      margin-top: 20px;
-      padding: 15px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background-color: #e9ecef;
+      margin-top: 30px;
+      padding: 25px;
+      border-radius: 15px;
+      background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+      border: 2px solid #e0e6ed;
       text-align: center;
+      font-size: 16px;
+      line-height: 1.6;
     }
 
     .loader {
-      border: 5px solid #f3f3f3;
-      /* Light grey */
-      border-top: 5px solid #3498db;
-      /* Blue */
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
       border-radius: 50%;
-      width: 30px;
-      height: 30px;
+      width: 40px;
+      height: 40px;
       animation: spin 1s linear infinite;
-      margin: 10px auto;
+      margin: 20px auto;
       display: none;
-      /* Hidden by default */
     }
 
     @keyframes spin {
@@ -116,133 +256,354 @@
         transform: rotate(360deg);
       }
     }
+
+    .success {
+      color: #4CAF50;
+      font-weight: bold;
+    }
+
+    .error {
+      color: #f44336;
+      font-weight: bold;
+    }
+
+    .info-card {
+      background: rgba(102, 126, 234, 0.1);
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .image-section {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      .upload-methods {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .method-btn {
+        width: 200px;
+      }
+
+      h1 {
+        font-size: 2em;
+      }
+    }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <h1>Uji Similaritas Wajah</h1>
+    <h1>🎭 Advanced Face Similarity Test</h1>
 
-    <div class="preview-container">
-      <div class="preview-box">
-        <div class="image-loader">
-          <label for="file1">Load Image 1:</label>
-          <input type="file" id="file1" name="image1" accept="image/*" />
-          <img id="preview1" src="#" alt="Preview 1" />
+    <div class="model-selector">
+      <label for="modelSelect">Choose AI Model:</label>
+      <select id="modelSelect">
+        <option value="VGG-Face">VGG-Face (Default - Fast & Accurate)</option>
+        <option value="Facenet">FaceNet (Google - High Accuracy)</option>
+        <option value="Facenet512">FaceNet512 (Enhanced Version)</option>
+        <option value="OpenFace">OpenFace (Lightweight)</option>
+        <option value="DeepFace">DeepFace (Facebook)</option>
+        <option value="DeepID">DeepID (Academic Research)</option>
+        <option value="ArcFace">ArcFace (State-of-the-art)</option>
+        <option value="Dlib">Dlib (Traditional Method)</option>
+        <option value="SFace">SFace (Lightweight & Fast)</option>
+      </select>
+    </div>
+
+    <div class="info-card">
+      <strong>💡 Tips:</strong> For best results, use clear, well-lit photos with faces clearly visible. Different
+      models may give different results - try multiple models for comparison!
+    </div>
+
+    <div class="image-section">
+      <div class="image-box">
+        <h3>📸 Image 1</h3>
+        <div class="upload-methods">
+          <button class="method-btn active" onclick="switchMethod(1, 'file')">Upload File</button>
+          <button class="method-btn" onclick="switchMethod(1, 'webcam')">Use Webcam</button>
+        </div>
+
+        <div class="upload-area" id="uploadArea1" onclick="document.getElementById('file1').click()">
+          <p>🖼️ Click to upload or drag & drop an image</p>
+          <small>Supports: JPG, PNG, GIF, BMP</small>
+          <input type="file" id="file1" class="file-input" accept="image/*" />
+        </div>
+
+        <div class="webcam-container" id="webcamContainer1">
+          <video id="video1" autoplay playsinline></video>
+          <br>
+          <button class="capture-btn" onclick="captureImage(1)">📷 Capture Photo</button>
+        </div>
+
+        <div class="preview-container">
+          <img id="preview1" class="preview-img" alt="Preview 1" />
         </div>
       </div>
-      <div class="preview-box">
-        <div class="image-loader">
-          <label for="file2">Load Image 2:</label>
-          <input type="file" id="file2" name="image2" accept="image/*" />
-          <img id="preview2" src="#" alt="Preview 2" />
+
+      <div class="image-box">
+        <h3>📸 Image 2</h3>
+        <div class="upload-methods">
+          <button class="method-btn active" onclick="switchMethod(2, 'file')">Upload File</button>
+          <button class="method-btn" onclick="switchMethod(2, 'webcam')">Use Webcam</button>
+        </div>
+
+        <div class="upload-area" id="uploadArea2" onclick="document.getElementById('file2').click()">
+          <p>🖼️ Click to upload or drag & drop an image</p>
+          <small>Supports: JPG, PNG, GIF, BMP</small>
+          <input type="file" id="file2" class="file-input" accept="image/*" />
+        </div>
+
+        <div class="webcam-container" id="webcamContainer2">
+          <video id="video2" autoplay playsinline></video>
+          <br>
+          <button class="capture-btn" onclick="captureImage(2)">📷 Capture Photo</button>
+        </div>
+
+        <div class="preview-container">
+          <img id="preview2" class="preview-img" alt="Preview 2" />
         </div>
       </div>
     </div>
 
     <div class="button-container">
-      <button id="predictBtn" disabled>Predict Similarity</button>
+      <button id="predictBtn" class="predict-btn" disabled>🔍 Analyze Similarity</button>
     </div>
 
     <div id="loader" class="loader"></div>
-    <div id="result">Hasil akan tampil di sini...</div>
+    <div id="result">Select two images and choose a model to begin analysis...</div>
   </div>
 
   <script>
-    const file1Input = document.getElementById("file1");
-    const file2Input = document.getElementById("file2");
-    const preview1 = document.getElementById("preview1");
-    const preview2 = document.getElementById("preview2");
-    const predictBtn = document.getElementById("predictBtn");
-    const resultDiv = document.getElementById("result");
-    const loaderDiv = document.getElementById("loader");
-
     let file1 = null;
     let file2 = null;
+    let webcamStream1 = null;
+    let webcamStream2 = null;
+    let currentMethod = { 1: 'file', 2: 'file' };
+
+    // Initialize drag and drop
+    function initializeDragAndDrop() {
+      ['uploadArea1', 'uploadArea2'].forEach(id => {
+        const area = document.getElementById(id);
+
+        area.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          area.classList.add('dragover');
+        });
+
+        area.addEventListener('dragleave', () => {
+          area.classList.remove('dragover');
+        });
+
+        area.addEventListener('drop', (e) => {
+          e.preventDefault();
+          area.classList.remove('dragover');
+          const files = e.dataTransfer.files;
+          if (files.length > 0) {
+            const fileInput = area.querySelector('input[type="file"]');
+            fileInput.files = files;
+            fileInput.dispatchEvent(new Event('change'));
+          }
+        });
+      });
+    }
+
+    function switchMethod(imageNum, method) {
+      currentMethod[imageNum] = method;
+
+      // Update button states
+      const buttons = document.querySelectorAll(`#uploadArea${imageNum} ~ .upload-methods .method-btn, .image-box:nth-child(${imageNum}) .method-btn`);
+      buttons.forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      // Show/hide appropriate containers
+      const uploadArea = document.getElementById(`uploadArea${imageNum}`);
+      const webcamContainer = document.getElementById(`webcamContainer${imageNum}`);
+
+      if (method === 'file') {
+        uploadArea.style.display = 'block';
+        webcamContainer.classList.remove('active');
+        stopWebcam(imageNum);
+      } else {
+        uploadArea.style.display = 'none';
+        webcamContainer.classList.add('active');
+        startWebcam(imageNum);
+      }
+    }
+
+    async function startWebcam(imageNum) {
+      try {
+        const video = document.getElementById(`video${imageNum}`);
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: 'user'
+          }
+        });
+
+        video.srcObject = stream;
+        if (imageNum === 1) webcamStream1 = stream;
+        else webcamStream2 = stream;
+
+      } catch (err) {
+        console.error('Error accessing webcam:', err);
+        alert('Could not access webcam. Please check permissions and try again.');
+      }
+    }
+
+    function stopWebcam(imageNum) {
+      const stream = imageNum === 1 ? webcamStream1 : webcamStream2;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        if (imageNum === 1) webcamStream1 = null;
+        else webcamStream2 = null;
+      }
+    }
+
+    function captureImage(imageNum) {
+      const video = document.getElementById(`video${imageNum}`);
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+
+      // Convert to blob
+      canvas.toBlob((blob) => {
+        const file = new File([blob], `webcam-capture-${imageNum}.jpg`, { type: 'image/jpeg' });
+
+        if (imageNum === 1) {
+          file1 = file;
+        } else {
+          file2 = file;
+        }
+
+        // Show preview
+        const preview = document.getElementById(`preview${imageNum}`);
+        preview.src = canvas.toDataURL();
+        preview.style.display = 'block';
+
+        // Stop webcam after capture
+        stopWebcam(imageNum);
+
+        updateButtonState();
+      }, 'image/jpeg', 0.8);
+    }
 
     function updateButtonState() {
+      const predictBtn = document.getElementById('predictBtn');
       predictBtn.disabled = !(file1 && file2);
     }
 
-    file1Input.addEventListener("change", function (event) {
+    // File input handlers
+    document.getElementById('file1').addEventListener('change', function (event) {
       file1 = event.target.files[0];
       if (file1) {
         const reader = new FileReader();
         reader.onload = function (e) {
-          preview1.src = e.target.result;
-          preview1.style.display = "block";
+          const preview = document.getElementById('preview1');
+          preview.src = e.target.result;
+          preview.style.display = 'block';
         };
         reader.readAsDataURL(file1);
-      } else {
-        preview1.src = "#";
-        preview1.style.display = "none";
       }
       updateButtonState();
     });
 
-    file2Input.addEventListener("change", function (event) {
+    document.getElementById('file2').addEventListener('change', function (event) {
       file2 = event.target.files[0];
       if (file2) {
         const reader = new FileReader();
         reader.onload = function (e) {
-          preview2.src = e.target.result;
-          preview2.style.display = "block";
+          const preview = document.getElementById('preview2');
+          preview.src = e.target.result;
+          preview.style.display = 'block';
         };
         reader.readAsDataURL(file2);
-      } else {
-        preview2.src = "#";
-        preview2.style.display = "none";
       }
       updateButtonState();
     });
 
-    predictBtn.addEventListener("click", async function () {
+    // Predict button handler
+    document.getElementById('predictBtn').addEventListener('click', async function () {
       if (!file1 || !file2) {
-        resultDiv.innerHTML =
-          '<p style="color: red;">Silakan pilih kedua gambar terlebih dahulu.</p>';
+        document.getElementById('result').innerHTML = '<p class="error">❌ Please select both images first.</p>';
         return;
       }
 
       const formData = new FormData();
-      formData.append("image1", file1);
-      formData.append("image2", file2);
+      formData.append('image1', file1);
+      formData.append('image2', file2);
+      formData.append('model', document.getElementById('modelSelect').value);
 
-      resultDiv.innerHTML = "Memproses...";
-      loaderDiv.style.display = "block";
+      const resultDiv = document.getElementById('result');
+      const loader = document.getElementById('loader');
+      const predictBtn = document.getElementById('predictBtn');
+
+      resultDiv.innerHTML = '🔄 Processing images...';
+      loader.style.display = 'block';
       predictBtn.disabled = true;
 
       try {
-        const response = await fetch("/predict", {
-          method: "POST",
+        const response = await fetch('/predict', {
+          method: 'POST',
           body: formData,
         });
 
         const data = await response.json();
-        loaderDiv.style.display = "none";
-        predictBtn.disabled = false; // Re-enable after processing
+        loader.style.display = 'none';
+        predictBtn.disabled = false;
 
         if (response.ok) {
-          let resultHTML = `<p><strong>Model:</strong> ${data.model}</p>`;
-          resultHTML += `<p><strong>Metric:</strong> ${data.similarity_metric}</p>`;
-          resultHTML += `<p><strong>Distance:</strong> ${data.distance.toFixed(
-            4
-          )} (Threshold: ${data.threshold})</p>`;
-          if (data.verified) {
-            resultHTML += `<p style="color: green; font-weight: bold;">KESIMPULAN: Kedua gambar adalah orang yang SAMA.</p>`;
-          } else {
-            resultHTML += `<p style="color: red; font-weight: bold;">KESIMPULAN: Kedua gambar adalah orang yang BERBEDA.</p>`;
-          }
+          const similarity = ((1 - data.distance / data.threshold) * 100).toFixed(1);
+          const confidenceColor = data.verified ? '#4CAF50' : '#f44336';
+
+          let resultHTML = `
+            <div style="background: linear-gradient(135deg, ${confidenceColor}20, transparent); padding: 20px; border-radius: 12px; border: 2px solid ${confidenceColor}40;">
+              <h3 style="margin-top: 0; color: ${confidenceColor};">
+                ${data.verified ? '✅ SAME PERSON' : '❌ DIFFERENT PEOPLE'}
+              </h3>
+              <div style="text-align: left; max-width: 600px; margin: 0 auto;">
+                <p><strong>🎯 Model Used:</strong> ${data.model}</p>
+                <p><strong>📊 Similarity Metric:</strong> ${data.similarity_metric}</p>
+                <p><strong>📏 Distance Score:</strong> ${data.distance.toFixed(4)}</p>
+                <p><strong>🎚️ Threshold:</strong> ${data.threshold}</p>
+                <p><strong>📈 Similarity:</strong> ${similarity}%</p>
+                <div style="background: #f0f0f0; border-radius: 8px; padding: 10px; margin-top: 15px;">
+                  <div style="background: ${confidenceColor}; height: 20px; border-radius: 10px; width: ${Math.max(similarity, 10)}%; transition: width 0.5s ease;"></div>
+                </div>
+              </div>
+            </div>
+          `;
           resultDiv.innerHTML = resultHTML;
         } else {
-          resultDiv.innerHTML = `<p style="color: red;">Error: ${data.error || "Unknown error"
-            }</p>`;
+          resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error || 'Unknown error occurred'}</p>`;
         }
       } catch (error) {
-        loaderDiv.style.display = "none";
+        loader.style.display = 'none';
         predictBtn.disabled = false;
-        console.error("Error:", error);
-        resultDiv.innerHTML = `<p style="color: red;">Terjadi kesalahan pada koneksi atau server.</p>`;
+        console.error('Error:', error);
+        resultDiv.innerHTML = '<p class="error">❌ Connection error. Please check your internet connection and try again.</p>';
       }
+    });
+
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', function () {
+      initializeDragAndDrop();
+      updateButtonState();
+    });
+
+    // Cleanup webcam streams when page unloads
+    window.addEventListener('beforeunload', function () {
+      stopWebcam(1);
+      stopWebcam(2);
     });
   </script>
 </body>

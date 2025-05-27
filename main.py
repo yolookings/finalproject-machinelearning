@@ -1,149 +1,274 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, jsonify, render_template
 from deepface import DeepFace
 import os
 import uuid
-from PIL import Image, UnidentifiedImageError # Import Pillow and specific error
-import pillow_heif
+from PIL import Image
+import logging
 
-pillow_heif.register_heif_opener()
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Configuration
 UPLOAD_FOLDER = 'temp_uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'heic', 'heif'}
-MAX_IMAGE_SIZE_MB = 10  # Max 10 MB per image
-
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = MAX_IMAGE_SIZE_MB * 1024 * 1024 * 2 # For two images + overhead
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
+# Create upload folder if it doesn't exist
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+# Supported models and their descriptions
+SUPPORTED_MODELS = {
+    'VGG-Face': 'Fast and reliable, good for general use',
+    'Facenet': 'Google\'s model, high accuracy',
+    'Facenet512': 'Enhanced version of FaceNet with better performance',
+    'OpenFace': 'Lightweight model, faster processing',
+    'DeepFace': 'Facebook\'s model, good accuracy',
+    'DeepID': 'Academic research model',
+    'ArcFace': 'State-of-the-art model with excellent accuracy',
+    'Dlib': 'Traditional computer vision approach',
+    'SFace': 'Lightweight and fast model'
+}
 
-def convert_heic_to_jpg(heic_path, upload_folder):
-    """Konversi file HEIC ke JPG dan kembalikan path JPG baru."""
+# Distance metrics for different models
+DISTANCE_METRICS = {
+    'VGG-Face': 'cosine',
+    'Facenet': 'cosine', 
+    'Facenet512': 'cosine',
+    'OpenFace': 'cosine',
+    'DeepFace': 'cosine',
+    'DeepID': 'cosine',
+    'ArcFace': 'cosine',
+    'Dlib': 'euclidean',
+    'SFace': 'cosine'
+}
+
+def allowed_file(filename):
+    """Check if file extension is allowed"""
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def optimize_image(image_path, max_size=(800, 800), quality=85):
+    """Optimize image for faster processing"""
     try:
-        img = Image.open(heic_path) # Pillow opens HEIC due to pillow_heif
-        
-        # Create a unique JPG filename in the same upload folder
-        jpg_filename = os.path.splitext(os.path.basename(heic_path))[0] + "_" + str(uuid.uuid4())[:4] + ".jpg"
-        jpg_path = os.path.join(upload_folder, jpg_filename)
-        
-        img.convert('RGB').save(jpg_path, "JPEG")
-        app.logger.info(f"Converted {heic_path} to {jpg_path}")
-        return jpg_path
-    except UnidentifiedImageError:
-        app.logger.error(f"Cannot identify image file (not a valid HEIC/image): {heic_path}")
-        return None
+        with Image.open(image_path) as img:
+            # Convert to RGB if necessary
+            if img.mode in ('RGBA', 'P'):
+                img = img.convert('RGB')
+            
+            # Resize if too large
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            
+            # Save optimized image
+            optimized_path = image_path.replace('.', '_optimized.')
+            img.save(optimized_path, 'JPEG', quality=quality, optimize=True)
+            
+            return optimized_path
     except Exception as e:
-        app.logger.error(f"Error converting HEIC {heic_path}: {e}")
-        return None
+        logger.error(f"Error optimizing image {image_path}: {e}")
+        return image_path
 
 @app.route('/')
 def index():
-    # Pass template name from function argument
+    """Serve the main HTML page"""
     return render_template('index.html')
+
+@app.route('/api/models', methods=['GET'])
+def get_models():
+    """Get list of supported models"""
+    return jsonify({
+        'models': SUPPORTED_MODELS,
+        'default': 'VGG-Face'
+    })
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    if 'image1' not in request.files or 'image2' not in request.files:
-        return jsonify({'error': 'Harap unggah kedua gambar'}), 400
-
-    file1 = request.files['image1']
-    file2 = request.files['image2']
-
-    if file1.filename == '' or file2.filename == '':
-        return jsonify({'error': 'Nama file tidak boleh kosong'}), 400
-
-    if not (allowed_file(file1.filename) and allowed_file(file2.filename)):
-        return jsonify({'error': f'Jenis file tidak diizinkan. Hanya {", ".join(ALLOWED_EXTENSIONS)}'}), 400
-
-    # Note: MAX_CONTENT_LENGTH already checked by Flask for total request size.
-    # Individual file size check can be done by reading file.tell() after saving or from file.content_length
-    # For simplicity, we'll rely on MAX_CONTENT_LENGTH for now.
-
-    # Save files temporarily with unique names
-    # Use original extension for saving, then check for HEIC
-    ext1 = os.path.splitext(file1.filename)[1].lower()
-    ext2 = os.path.splitext(file2.filename)[1].lower()
-    
-    original_filename1 = str(uuid.uuid4()) + ext1
-    original_filename2 = str(uuid.uuid4()) + ext2
-
-    img1_path_original = os.path.join(app.config['UPLOAD_FOLDER'], original_filename1)
-    img2_path_original = os.path.join(app.config['UPLOAD_FOLDER'], original_filename2)
-
+    """Main prediction endpoint"""
     files_to_delete = []
-
+    
     try:
-        file1.save(img1_path_original)
-        files_to_delete.append(img1_path_original)
-        file2.save(img2_path_original)
-        files_to_delete.append(img2_path_original)
+        # Validate request
+        if 'image1' not in request.files or 'image2' not in request.files:
+            return jsonify({'error': 'Please upload both images'}), 400
 
-        img1_path_for_deepface = img1_path_original
-        img2_path_for_deepface = img2_path_original
-        
-        # Check and convert if HEIC
-        if ext1 in ('.heic', '.heif'):
-            app.logger.info(f"Image 1 ({original_filename1}) is HEIC, attempting conversion.")
-            converted_path1 = convert_heic_to_jpg(img1_path_original, app.config['UPLOAD_FOLDER'])
-            if converted_path1:
-                img1_path_for_deepface = converted_path1
-                files_to_delete.append(converted_path1)
-            else:
-                return jsonify({'error': 'Gagal mengkonversi Gambar 1 (HEIC/HEIF). Pastikan file valid.'}), 500
-        
-        if ext2 in ('.heic', '.heif'):
-            app.logger.info(f"Image 2 ({original_filename2}) is HEIC, attempting conversion.")
-            converted_path2 = convert_heic_to_jpg(img2_path_original, app.config['UPLOAD_FOLDER'])
-            if converted_path2:
-                img2_path_for_deepface = converted_path2
-                files_to_delete.append(converted_path2)
-            else:
-                return jsonify({'error': 'Gagal mengkonversi Gambar 2 (HEIC/HEIF). Pastikan file valid.'}), 500
+        file1 = request.files['image1']
+        file2 = request.files['image2']
+        model_name = request.form.get('model', 'VGG-Face')
 
-        # Verify using the (potentially converted) image paths
-        result = DeepFace.verify(
-            img1_path=img1_path_for_deepface,
-            img2_path=img2_path_for_deepface,
-            model_name="VGG-Face", # Or make this configurable
-            detector_backend='retinaface', # Often a good default
-            enforce_detection=False # Important: allows processing even if one face is hard to detect initially
-                                    # Rely on subsequent error for "no face detected"
-        )
+        # Validate files
+        if file1.filename == '' or file2.filename == '':
+            return jsonify({'error': 'File names cannot be empty'}), 400
+
+        if not allowed_file(file1.filename) or not allowed_file(file2.filename):
+            return jsonify({'error': 'Unsupported file format. Please use JPG, PNG, GIF, BMP, or WebP'}), 400
+
+        # Validate model
+        if model_name not in SUPPORTED_MODELS:
+            return jsonify({'error': f'Unsupported model. Available models: {list(SUPPORTED_MODELS.keys())}'}), 400
+
+        # Generate unique filenames
+        ext1 = os.path.splitext(file1.filename)[1].lower()
+        ext2 = os.path.splitext(file2.filename)[1].lower()
         
+        filename1 = f"{uuid.uuid4()}{ext1}"
+        filename2 = f"{uuid.uuid4()}{ext2}"
+        
+        img1_path = os.path.join(app.config['UPLOAD_FOLDER'], filename1)
+        img2_path = os.path.join(app.config['UPLOAD_FOLDER'], filename2)
+
+        # Save uploaded files
+        file1.save(img1_path)
+        file2.save(img2_path)
+        files_to_delete.extend([img1_path, img2_path])
+
+        logger.info(f"Processing images with model: {model_name}")
+
+        # Optimize images for faster processing
+        try:
+            optimized_img1 = optimize_image(img1_path)
+            optimized_img2 = optimize_image(img2_path)
+            
+            if optimized_img1 != img1_path:
+                files_to_delete.append(optimized_img1)
+            if optimized_img2 != img2_path:
+                files_to_delete.append(optimized_img2)
+                
+            # Use optimized images for processing
+            process_img1 = optimized_img1
+            process_img2 = optimized_img2
+            
+        except Exception as e:
+            logger.warning(f"Image optimization failed, using original images: {e}")
+            process_img1 = img1_path
+            process_img2 = img2_path
+
+        # Get appropriate distance metric for the model
+        distance_metric = DISTANCE_METRICS.get(model_name, 'cosine')
+
+        # Perform face verification with enhanced error handling
+        try:
+            result = DeepFace.verify(
+                img1_path=process_img1,
+                img2_path=process_img2,
+                model_name=model_name,
+                distance_metric=distance_metric,
+                enforce_detection=False,  # Allow processing even if face detection is uncertain
+                detector_backend='opencv'  # Use OpenCV as it's more reliable
+            )
+            
+            logger.info(f"Verification successful with {model_name}")
+            
+            # Enhanced response with additional information
+            response_data = {
+                'verified': result['verified'],
+                'distance': float(result['distance']),  # Ensure it's JSON serializable
+                'threshold': float(result['threshold']),
+                'model': result['model'],
+                'similarity_metric': result['similarity_metric'],
+                'confidence_score': float(1 - (result['distance'] / result['threshold'])) if result['threshold'] > 0 else 0,
+                'model_description': SUPPORTED_MODELS.get(model_name, 'Unknown model'),
+                'processing_info': {
+                    'distance_metric': distance_metric,
+                    'detection_backend': 'opencv'
+                }
+            }
+            
+            return jsonify(response_data)
+
+        except Exception as deepface_error:
+            error_msg = str(deepface_error).lower()
+            
+            # Handle specific DeepFace errors
+            if 'face could not be detected' in error_msg:
+                return jsonify({
+                    'error': 'Face could not be detected in one or both images. Please ensure faces are clearly visible and well-lit.',
+                    'suggestion': 'Try using different images with clearer faces, or try the OpenFace or Dlib models which are more tolerant.'
+                }), 400
+                
+            elif 'could not find any face' in error_msg:
+                return jsonify({
+                    'error': 'No faces found in the uploaded images.',
+                    'suggestion': 'Please upload images that clearly contain human faces.'
+                }), 400
+                
+            elif 'dimension' in error_msg or 'shape' in error_msg:
+                return jsonify({
+                    'error': 'Image processing error. The images might be corrupted or in an unsupported format.',
+                    'suggestion': 'Try uploading different images or converting them to JPG format.'
+                }), 400
+                
+            elif 'memory' in error_msg or 'out of memory' in error_msg:
+                return jsonify({
+                    'error': 'Processing failed due to memory constraints. Try using smaller images.',
+                    'suggestion': 'Resize your images to be smaller (under 1MB) and try again.'
+                }), 500
+                
+            else:
+                logger.error(f"DeepFace processing error with {model_name}: {deepface_error}")
+                return jsonify({
+                    'error': f'Face processing failed: {str(deepface_error)}',
+                    'suggestion': f'Try using a different model. Current model: {model_name}'
+                }), 500
+
+    except Exception as general_error:
+        logger.error(f"General error in predict endpoint: {general_error}")
         return jsonify({
-            'verified': result['verified'],
-            'distance': result['distance'],
-            'threshold': result['threshold'],
-            'model': result['model'],
-            'similarity_metric': result['similarity_metric']
-        })
-
-    except ValueError as ve: 
-        app.logger.error(f"ValueError during DeepFace processing: {ve}")
-        if "Face could not be detected" in str(ve) or "cannot be aligned" in str(ve) or "No face detected in" in str(ve):
-             return jsonify({'error': f'Wajah tidak dapat terdeteksi pada salah satu atau kedua gambar. Detail: {str(ve)}'}), 400 # 400 as it's a client-side image issue
-        return jsonify({'error': f'Terjadi kesalahan pemrosesan gambar: {str(ve)}'}), 500
-    except Exception as e:
-        app.logger.error(f"Unexpected error during DeepFace processing: {e}", exc_info=True)
-        return jsonify({'error': f'Terjadi kesalahan internal server: {str(e)}'}), 500
+            'error': 'An unexpected error occurred during processing.',
+            'details': str(general_error)
+        }), 500
+        
     finally:
-        # Clean up all temporary files
-        for f_path in files_to_delete:
-            if os.path.exists(f_path):
+        # Cleanup: Delete all temporary files
+        for file_path in files_to_delete:
+            if os.path.exists(file_path):
                 try:
-                    os.remove(f_path)
-                    app.logger.info(f"Successfully deleted temp file: {f_path}")
-                except Exception as e_del:
-                    app.logger.error(f"Error deleting temp file {f_path}: {e_del}")
+                    os.remove(file_path)
+                    logger.info(f"Deleted temporary file: {file_path}")
+                except Exception as delete_error:
+                    logger.warning(f"Could not delete file {file_path}: {delete_error}")
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'supported_models': list(SUPPORTED_MODELS.keys()),
+        'upload_folder': app.config['UPLOAD_FOLDER'],
+        'max_file_size': '16MB'
+    })
+
+@app.errorhandler(413)
+def too_large(e):
+    """Handle file too large error"""
+    return jsonify({'error': 'File too large. Maximum size is 16MB per image.'}), 413
+
+@app.errorhandler(404)
+def not_found(e):
+    """Handle 404 errors"""
+    return jsonify({'error': 'Endpoint not found'}), 404
+
+@app.errorhandler(500)
+def internal_error(e):
+    """Handle internal server errors"""
+    logger.error(f"Internal server error: {e}")
+    return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
-    # For development, ensure Flask's logger is set up if not using default print
-    import logging
-    logging.basicConfig(level=logging.INFO) # Show INFO level logs from app.logger
-    # When using a production server like Gunicorn, it handles logging.
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Print startup information
+    print("🚀 Starting Enhanced Face Similarity Server...")
+    print(f"📁 Upload folder: {UPLOAD_FOLDER}")
+    print(f"🤖 Supported models: {', '.join(SUPPORTED_MODELS.keys())}")
+    print(f"📏 Max file size: 16MB")
+    print("🌐 Server will be available at: http://localhost:5000")
+    print("\n" + "="*50)
+    
+    # Run the Flask app
+    app.run(
+        debug=True,
+        host='0.0.0.0',  # Allow connections from other devices on network
+        port=5000,
+        threaded=True  # Enable threading for better performance
+    )
