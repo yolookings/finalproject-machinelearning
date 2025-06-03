@@ -1,10 +1,9 @@
 ---
-title: { { title } }
-emoji: { { emoji } }
-colorFrom: { { colorFrom } }
-colorTo: { { colorTo } }
-sdk: { { sdk } }
-sdk_version: "{{sdkVersion}}"
+title: Face Similarity Checker
+emoji: 🤗
+colorFrom: indigo
+colorTo: purple
+sdk: gradio
 app_file: main.py
 pinned: false
 ---
