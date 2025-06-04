@@ -18,8 +18,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   build-essential \
   libgl1-mesa-glx \
   libglib2.0-0 \
-  curl &&
-  rm -rf /var/lib/apt/lists/*
+  curl
+
+RUN rm -rf /var/lib/apt/lists/*
 
 # 4. Install uv (for package management, as uv.lock is present)
 # Pin uv version for reproducibility, e.g. 0.2.30 or use latest
