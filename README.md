@@ -1,13 +1,3 @@
----
-title: Face Similarity Checker
-emoji: 🤗
-colorFrom: indigo
-colorTo: purple
-sdk: gradio
-app_file: main.py
-pinned: false
----
-
 # Final Project - Artificial Intelligence and Machine Learning
 
 ## Inisiasi
